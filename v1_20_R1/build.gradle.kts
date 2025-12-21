@@ -4,13 +4,17 @@ plugins {
     id("io.github.goooler.shadow") version "8.1.8"
 }
 
-repositories {
-    maven("https://repo.papermc.io/repository/maven-public/") // Paper
-}
+/*
+ ❌ KHÔNG CÓ repositories {}
+ Repositories được quản lý duy nhất bởi settings.gradle.kts
+*/
 
 dependencies {
     compileOnly(project(":core"))
+
+    // Đổi version cho đúng module (ví dụ R5 thì 1.21.7, v.v.)
     paperweight.paperDevBundle("1.20.1-R0.1-SNAPSHOT")
+
     pluginRemapper("net.fabricmc:tiny-remapper:0.10.3:fat")
 }
 
