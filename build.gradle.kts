@@ -26,7 +26,7 @@ val SUPPORTED_VERSIONS = listOf(
     "v1_21_R2" toNms "1.21.3-R0.1-SNAPSHOT",
     "v1_21_R3" toNms "1.21.4-R0.1-SNAPSHOT",
     "v1_21_R4" toNms "1.21.5-R0.1-SNAPSHOT",
-    "v1_21_R5" toNms "1.21.7-R0.1-SNAPSHOT"
+    "v1_21_R5" toNms "1.21.8-R0.1-SNAPSHOT"
 )
 
 val pluginVersion: String by project
@@ -48,6 +48,10 @@ allprojects {
     apply(plugin = "java")
 }
 
+/* =========================
+   Shared dependencies
+   ========================= */
+
 subprojects {
     dependencies {
         val actionsVersion = "1.0.0-SNAPSHOT"
@@ -59,8 +63,8 @@ subprojects {
         compileOnly("net.kyori:adventure-text-serializer-ansi:$adventureVersion")
         compileOnly("net.kyori:adventure-platform-bukkit:$platformVersion")
 
-        // ProtocolLib – resolve từ Maven Central (qua settings.gradle.kts)
-        compileOnly("com.comphenix.protocol:ProtocolLib:5.3.0")
+        // ✅ ProtocolLib – bản STABLE, chạy Folia 1.21.8
+        compileOnly("com.comphenix.protocol:ProtocolLib:5.2.0")
 
         compileOnly("me.clip:placeholderapi:2.11.6")
         compileOnly("me.gabytm.util:actions-core:$actionsVersion")
@@ -148,4 +152,26 @@ tasks {
     build {
         dependsOn(shadowJar)
     }
+}
+
+/* =========================
+   plugin.yml (generated)
+   ========================= */
+
+bukkit {
+    main = "io.th0rgal.oraxen.OraxenPlugin"
+    name = "Oraxen"
+    version = pluginVersion
+    apiVersion = "1.18"
+
+    // ✅ BẮT BUỘC CHO FOLIA
+    foliaSupported = true
+
+    softDepend = listOf(
+        "ProtocolLib",
+        "PlaceholderAPI",
+        "WorldEdit",
+        "MythicMobs",
+        "MMOItems"
+    )
 }
