@@ -23,4 +23,4 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build
-        run: ./gradlew clean build
+        run: ./gradlew clean build --no-build-cache --refresh-dependencies
