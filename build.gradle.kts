@@ -63,8 +63,9 @@ subprojects {
         compileOnly("net.kyori:adventure-text-serializer-ansi:$adventureVersion")
         compileOnly("net.kyori:adventure-platform-bukkit:$platformVersion")
 
-        // ✅ ProtocolLib – bản STABLE, chạy Folia 1.21.8
-        compileOnly("com.comphenix.protocol:ProtocolLib:5.2.0")
+        // ⚠️ ProtocolLib KHÔNG resolve – runtime-only
+        // KHÔNG để version, KHÔNG thêm repo
+        compileOnly("com.comphenix.protocol:ProtocolLib")
 
         compileOnly("me.clip:placeholderapi:2.11.6")
         compileOnly("me.gabytm.util:actions-core:$actionsVersion")
@@ -167,6 +168,7 @@ bukkit {
     // ✅ BẮT BUỘC CHO FOLIA
     foliaSupported = true
 
+    // ✅ ProtocolLib runtime-only
     softDepend = listOf(
         "ProtocolLib",
         "PlaceholderAPI",
