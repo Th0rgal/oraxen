@@ -9,9 +9,44 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
+
+    // ✅ Paperweight + multi-module an toàn
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+
     repositories {
+        mavenCentral()
+
+        // 🔥 BẮT BUỘC – ProtocolLib
+        maven("https://repo.dmulloy2.net/repository/public/")
+
+        // MineInAbyss
         maven("https://repo.mineinabyss.com/releases")
         maven("https://repo.mineinabyss.com/snapshots")
+
+        // Paper / Spigot / Mojang
+        maven("https://repo.papermc.io/repository/maven-public/")
+        maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
+        maven("https://oss.sonatype.org/content/repositories/snapshots")
+        maven("https://libraries.minecraft.net/")
+
+        // Plugin ecosystem
+        maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+        maven("https://maven.elmakers.com/repository/")
+        maven("https://repo.triumphteam.dev/snapshots")
+        maven("https://mvn.lumine.io/repository/maven-public/") {
+            metadataSources { artifact() }
+        }
+        maven("https://s01.oss.sonatype.org/content/repositories/snapshots")
+
+        // Oraxen / partners
+        maven("https://repo.oraxen.com/releases")
+        maven("https://repo.oraxen.com/snapshots")
+        maven("https://repo.auxilor.io/repository/maven-public/")
+        maven("https://maven.enginehub.org/repo/")
+        maven("https://jitpack.io")
+        maven("https://nexus.phoenixdevt.fr/repository/maven-public/")
+        maven("https://repo.codemc.org/repository/maven-public/")
+
         mavenLocal()
     }
 

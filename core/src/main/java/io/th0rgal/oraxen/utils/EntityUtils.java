@@ -29,7 +29,8 @@ public class EntityUtils {
     }
 
     public void teleport(@NotNull Location location, @NotNull Entity entity, PlayerTeleportEvent.TeleportCause cause) {
-        if (VersionUtil.isPaperServer() || VersionUtil.isFoliaServer() && VersionUtil.atOrAbove("1.19.4")) {
+        // Fix precedence: call teleportAsync only on 1.19.4+ AND Paper/Folia
+        if ((VersionUtil.isPaperServer() || VersionUtil.isFoliaServer()) && VersionUtil.atOrAbove("1.19.4")) {
             entity.teleportAsync(location, cause);
         } else entity.teleport(location);
     }
@@ -48,15 +49,27 @@ public class EntityUtils {
 
     static {
         try {
-            // Get the method based on the server version
-            Class<?> entitySpawnerClass = Class.forName("org.bukkit.RegionAccessor"); // Replace with actual path
-            if (VersionUtil.atOrAbove("1.20.2")) {
-                spawnMethod = entitySpawnerClass.getDeclaredMethod("spawn", Location.class, Class.class, java.util.function.Consumer.class);
-            } else {
-                spawnMethod = entitySpawnerClass.getDeclaredMethod("spawn", Location.class, Class.class, org.bukkit.util.Consumer.class);
+            // Try to find a spawn method on World with different consumer types depending on the server/API version.
+            // Prefer the newest signature: spawn(Location, Class, java.util.function.Consumer)
+            try {
+                spawnMethod = World.class.getMethod("spawn", Location.class, Class.class, java.util.function.Consumer.class);
+            } catch (NoSuchMethodException e1) {
+                // Fallback to the older org.bukkit.util.Consumer
+                try {
+                    spawnMethod = World.class.getMethod("spawn", Location.class, Class.class, org.bukkit.util.Consumer.class);
+                } catch (NoSuchMethodException e2) {
+                    // Fallback to spawn without consumer
+                    try {
+                        spawnMethod = World.class.getMethod("spawn", Location.class, Class.class);
+                    } catch (NoSuchMethodException e3) {
+                        Logs.logWarning("No suitable spawn method found via reflection: " + e3.getMessage());
+                        spawnMethod = null;
+                    }
+                }
             }
-        } catch (ClassNotFoundException | NoSuchMethodException e) {
-            Logs.logWarning(e.getMessage()); // Handle the exception according to your needs
+        } catch (Exception e) {
+            Logs.logWarning("Error while initializing spawnMethod: " + e.getMessage());
+            spawnMethod = null;
         }
     }
 
@@ -73,16 +86,50 @@ public class EntityUtils {
             World world = location.getWorld();
             Object wrappedConsumer;
 
-            // Determine the consumer type and choose the appropriate spawn method
-            // 1.20.2> uses java.util.function.Consumer while 1.20.2< uses org.bukkit.util.Consumer
+            // Determine the consumer type and choose the appropriate wrapper
             if (VersionUtil.atOrAbove("1.20.2")) wrappedConsumer = new JavaConsumerWrapper<>(consumer);
             else wrappedConsumer = new BukkitConsumerWrapper<>(consumer);
 
-            entity = (T) spawnMethod.invoke(world, location, clazz, wrappedConsumer);
+            // If we found a spawnMethod during static init, try to use it.
+            if (spawnMethod != null) {
+                Class<?>[] params = spawnMethod.getParameterTypes();
+                if (params.length == 3) {
+                    // method with consumer parameter
+                    entity = (T) spawnMethod.invoke(world, location, clazz, wrappedConsumer);
+                    return entity;
+                } else {
+                    // method without consumer, spawn then apply consumer manually
+                    entity = (T) spawnMethod.invoke(world, location, clazz);
+                    if (entity != null && consumer != null) consumer.accept(entity);
+                    return entity;
+                }
+            }
 
-            return entity;
+            // If spawnMethod is null, attempt to resolve at runtime on the actual world instance
+            try {
+                Method m = world.getClass().getMethod("spawn", Location.class, Class.class, java.util.function.Consumer.class);
+                entity = (T) m.invoke(world, location, clazz, wrappedConsumer);
+                return entity;
+            } catch (NoSuchMethodException ex1) {
+                try {
+                    Method m2 = world.getClass().getMethod("spawn", Location.class, Class.class, org.bukkit.util.Consumer.class);
+                    entity = (T) m2.invoke(world, location, clazz, wrappedConsumer);
+                    return entity;
+                } catch (NoSuchMethodException ex2) {
+                    // Last resort: spawn without consumer then call consumer.accept(entity)
+                    try {
+                        Method m3 = world.getClass().getMethod("spawn", Location.class, Class.class);
+                        entity = (T) m3.invoke(world, location, clazz);
+                        if (entity != null && consumer != null) consumer.accept(entity);
+                        return entity;
+                    } catch (NoSuchMethodException ex3) {
+                        Logs.logWarning("No spawn method available on World instance: " + ex3.getMessage());
+                    }
+                }
+            }
+
         } catch (Exception e) {
-           Logs.logWarning(e.getMessage()); // Handle the exception according to your needs
+           Logs.logWarning("Failed to spawn entity: " + e.getMessage());
         }
         return null;
     }
@@ -120,4 +167,3 @@ public class EntityUtils {
     }
 
 }
-
